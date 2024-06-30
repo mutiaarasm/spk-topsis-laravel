@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PenilaianController;
 use App\Http\Controllers\Admin\SubkriteriaController;
 use App\Http\Controllers\Admin\TopsisController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\landingController;
 use App\Models\Kriteria;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 */
 
 Route::get('/', function () {
-    return view('login');
+    return view('landing');
 });
  Route::get('dashboard',[DashboardController::class,'indexPage'])->name('dashboard.index');
  Route::get('dataNasabah',[DataNasabahController::class,'indexPage'])->name('dataNasabah.index');
@@ -32,7 +33,7 @@ Route::get('/', function () {
  Route::get('register',[RegisterController::class,'registerpage'])->name('register');
  Route::post('register',[RegisterController::class,'register']); //nambahin data
  Route::post('login',[LoginController::class,'login']); //nambahin data
- Route::post('logout', [LoginController::class, 'logout']);
+ Route::post('logout', [LoginController::class, 'logout'])->name('logout');
  Route::get('kriteria',[KriteriaController::class,'indexPage'])->name('kriteria.index');
  Route::get('dataNasabah/create', [DataNasabahController::class, 'create'])->name('dataNasabah.create');
  Route::post('dataNasabah', [DataNasabahController::class, 'store'])->name('dataNasabah.store');
@@ -76,3 +77,4 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
  
     return redirect('/home');
 })->middleware(['auth', 'signed'])->name('verification.verify');
+Route::get('landing', [LandingController::class, 'index'])->name('landing');
