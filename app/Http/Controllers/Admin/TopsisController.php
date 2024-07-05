@@ -42,112 +42,84 @@ class TopsisController extends Controller
 
     public function hitungPembagi()
     {
-        // Ambil semua data penilaian
+        
         $penilaians = Penilaian::all();
-
-        // Inisialisasi array untuk menyimpan pembagi untuk setiap kriteria
         $pembagi = [];
 
-        // Loop melalui setiap kriteria
         foreach (array_keys($this->kriteria) as $kriteria) {
-            // Hitung jumlah kuadrat untuk kriteria saat ini
+            
             $jumlahKuadrat = $penilaians->sum(function ($penilaian) use ($kriteria) {
-                return pow($penilaian->$kriteria, 2);
+                return pow($penilaian->$kriteria, 2); //bikin penjumlahan+pangkat2
             });
-
-            // Hitung pembagi (akar kuadrat dari total jumlah kuadrat)
-            $pembagi[$kriteria] = sqrt($jumlahKuadrat);
+            $pembagi[$kriteria] = sqrt($jumlahKuadrat);  //akar dari jumlahkuadrat
         }
 
-        // Sekarang Anda memiliki pembagi untuk setiap kriteria
         return $pembagi;
     }
 
     public function hitungMatriksTernormalisasi($pembagi)
     {
-        // Ambil semua data penilaian
+        
         $penilaians = Penilaian::all();
 
-        // Inisialisasi array untuk menyimpan matriks ternormalisasi
-        $matriksTernormalisasi = [];
+        $matriksTernormalisasi = []; //nyimpen nilai yg udh di normaliasasi buat ditampilin
 
-        // Loop melalui setiap penilaian
         foreach ($penilaians as $penilaian) {
-            // Inisialisasi array untuk menyimpan nilai ternormalisasi untuk penilaian saat ini
             $nilaiTernormalisasi = [];
-
-            // Loop melalui setiap kriteria
             foreach (array_keys($this->kriteria) as $kriteria) {
-                // Hitung nilai ternormalisasi
-                $nilaiTernormalisasi[$kriteria] = $penilaian->$kriteria / $pembagi[$kriteria];
+                $nilaiTernormalisasi[$kriteria] = $penilaian->$kriteria / $pembagi[$kriteria]; //penilaian/pembagi
             }
-
-            // Simpan nilai ternormalisasi dalam array matriks ternormalisasi
             $matriksTernormalisasi[$penilaian->id] = $nilaiTernormalisasi;
         }
-
-        // Kembalikan array matriks ternormalisasi
         return $matriksTernormalisasi;
     }
 
     public function hitungMatriksTerbobot($matriksTernormalisasi)
     {
-        // Ambil bobot dari tabel kriteria
-        $kriterias = Kriteria::all()->pluck('bobot', 'nama_kriteria')->toArray();
+        
+        $kriterias = Kriteria::all()->pluck('bobot', 'nama_kriteria')->toArray(); //aray asosiatif
     
-        // Inisialisasi array untuk menyimpan matriks ternormalisasi terbobot
         $matriksTerbobot = [];
     
-        // Loop melalui setiap penilaian dalam matriks ternormalisasi
         foreach ($matriksTernormalisasi as $id => $nilaiTernormalisasi) {
-            // Inisialisasi array untuk menyimpan nilai terbobot untuk penilaian saat ini
             $nilaiTerbobot = [];
     
-            // Loop melalui setiap kriteria
             foreach ($this->kriteria as $kriteriaKey => $kriteriaValue) {
-                // Ambil bobot untuk kriteria saat ini dari array kriterias
                 $bobot = $kriterias[$kriteriaValue] ?? 0; // Jika bobot tidak ditemukan, gunakan nilai default 0
     
-                // Hitung nilai terbobot
-                $nilaiTerbobot[$kriteriaKey] = $nilaiTernormalisasi[$kriteriaKey] * $bobot;
+                $nilaiTerbobot[$kriteriaKey] = $nilaiTernormalisasi[$kriteriaKey] * $bobot;//normalisasi * bobot
             }
     
-            // Simpan nilai terbobot dalam array matriks terbobot
             $matriksTerbobot[$id] = $nilaiTerbobot;
         }
     
-        // Kembalikan array matriks terbobot
         return $matriksTerbobot;
     }
     public function hitungAPlusMinus($matriksTerbobot)
     {
-        // Inisialisasi array untuk menyimpan nilai A+ dan A-
         $aPlus = [];
         $aMinus = [];
     
-        // Loop melalui setiap kriteria
         foreach ($this->kriteria as $kriteriaKey => $kriteriaValue) {
-            // Ambil nilai untuk kriteria saat ini dari matriks terbobot
+        
             $values = array_column($matriksTerbobot, $kriteriaKey);
     
-            // Pastikan array nilai tidak kosong sebelum menghitung max/min
             if (!empty($values)) {
-                // Jika kriteria adalah 'Benefit', maka A+ adalah nilai maksimum, dan A- adalah nilai minimum
+                
                 if ($this->atributKriteria($kriteriaValue) == 'Benefit') {
-                    $aPlus[$kriteriaKey] = max($values);
-                    $aMinus[$kriteriaKey] = min($values);
-                } else { // Jika kriteria adalah 'Cost', maka A+ adalah nilai minimum, dan A- adalah nilai maksimum
-                    $aPlus[$kriteriaKey] = min($values);
-                    $aMinus[$kriteriaKey] = max($values);
+                    $aPlus[$kriteriaKey] = max($values); // kl benefit max
+                    $aMinus[$kriteriaKey] = min($values); // kl benefit min
+                } else { 
+                    $aPlus[$kriteriaKey] = min($values); //kalo cost 
+                    $aMinus[$kriteriaKey] = max($values); // kalo cost
                 }
             } else {
-                // Tambahkan penanganan untuk kasus nilai kosong
-                $aPlus[$kriteriaKey] = 0; // Atau nilai default lainnya
-                $aMinus[$kriteriaKey] = 0; // Atau nilai default lainnya
+                
+                $aPlus[$kriteriaKey] = 0; // Atau nilai default lainnya =0
+                $aMinus[$kriteriaKey] = 0; 
             }
         }
     
-        // Kembalikan array nilai A+ dan A-
         return ['A+' => $aPlus, 'A-' => $aMinus];
     }
     
@@ -168,14 +140,14 @@ class TopsisController extends Controller
         $totalMinus = 0;
 
         foreach ($nilaiTerbobot as $kriteria => $nilai) {
-            // Hitung total kuadrat selisih ke solusi ideal positif (A+)
-            $totalPlus += pow($nilai - $aPlus[$kriteria], 2);
-            // Hitung total kuadrat selisih ke solusi ideal negatif (A-)
+        
+            $totalPlus += pow($nilai - $aPlus[$kriteria], 2); //terbobot-nilai a ,pngkat dua
+        
             $totalMinus += pow($nilai - $aMinus[$kriteria], 2);
         }
 
-        // Hitung D+ dan D- menggunakan akar kuadrat dari total kuadrat selisih
-        $dPlus[$id] = sqrt($totalPlus);
+        
+        $dPlus[$id] = sqrt($totalPlus); //akar kuadrat
         $dMinus[$id] = sqrt($totalMinus);
     }
 
@@ -188,14 +160,11 @@ class TopsisController extends Controller
 
     foreach ($nilaiD['D+'] as $id => $dPlusValue) {
         $dMinusValue = $nilaiD['D-'][$id];
-        $nilaiV[$id] = $dMinusValue / ($dPlusValue + $dMinusValue);
+        $nilaiV[$id] = $dMinusValue / ($dPlusValue + $dMinusValue); //d-/(d+ + d-)
     }
 
     return $nilaiV;
 }
-    
-
-
     
  
 }
