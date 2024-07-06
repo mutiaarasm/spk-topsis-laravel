@@ -49,10 +49,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($matriksTernormalisasi as $nasabah => $values)
+                    @foreach($matriksTernormalisasi as $item)
                     <tr>
-                        <td>{{ $nasabah }}</td>
-                        @foreach($values as $value)
+                        <td>{{ $item['nama'] }}</td>
+                        @foreach($item['values'] as $value)
                         <td>{{ number_format($value, 3) }}</td>
                         @endforeach
                     </tr>
@@ -62,11 +62,11 @@
         </div>
     </div>
 
-    <!-- Langkah 3: Matriks Ternormalisasi Terbobot -->
+    <!-- Langkah 3: Matriks Terbobot -->
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-weight me-1"></i>
-            Langkah 3: Matriks Ternormalisasi Terbobot
+            <i class="fas fa-weight-hanging me-1"></i>
+            Langkah 3: Matriks Terbobot
         </div>
         <div class="card-body">
             <table class="table table-bordered">
@@ -79,10 +79,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($matriksTerbobot as $nasabah => $values)
+                    @foreach($matriksTerbobot as $item)
                     <tr>
-                        <td>{{ $nasabah }}</td>
-                        @foreach($values as $value)
+                        <td>{{ $item['nama'] }}</td>
+                        @foreach($item['values'] as $value)
                         <td>{{ number_format($value, 3) }}</td>
                         @endforeach
                     </tr>
@@ -92,11 +92,11 @@
         </div>
     </div>
 
-    <!-- Langkah 4: Solusi Ideal Positif (A+) dan Solusi Ideal Negatif (A-) -->
+    <!-- Langkah 4: A+ dan A- -->
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-star me-1"></i>
-            Langkah 4: Solusi Ideal Positif (A+) dan Solusi Ideal Negatif (A-)
+            <i class="fas fa-plus-minus me-1"></i>
+            Langkah 4: A+ dan A-
         </div>
         <div class="card-body">
             <table class="table table-bordered">
@@ -108,10 +108,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($aPlusMinus['A+'] as $kriteria => $valueAPlus)
+                    @foreach($aPlusMinus['A+'] as $kriteria => $value)
                     <tr>
-                        <td>{{ $kriteria }}</td>
-                        <td>{{ number_format($valueAPlus, 3) }}</td>
+                        <td>{{ ucfirst($kriteria) }}</td>
+                        <td>{{ number_format($value, 3) }}</td>
                         <td>{{ number_format($aPlusMinus['A-'][$kriteria], 3) }}</td>
                     </tr>
                     @endforeach
@@ -123,7 +123,7 @@
     <!-- Langkah 5: Nilai D -->
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-calculator me-1"></i>
+            <i class="fas fa-square-root-alt me-1"></i>
             Langkah 5: Nilai D
         </div>
         <div class="card-body">
@@ -136,11 +136,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($nilaiD['D+'] as $id => $dPlusValue)
+                    @foreach($nilaiD['D+'] as $index => $value)
                     <tr>
-                        <td>{{ $id }}</td>
-                        <td>{{ number_format($dPlusValue, 3) }}</td>
-                        <td>{{ number_format($nilaiD['D-'][$id], 3) }}</td>
+                        <td>{{ $value['nama'] }}</td>
+                        <td>{{ number_format($value['d_plus'], 3) }}</td>
+                        <td>{{ number_format($nilaiD['D-'][$index]['d_minus'], 3) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -151,7 +151,7 @@
     <!-- Langkah 6: Nilai V -->
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-check me-1"></i>
+            <i class="fas fa-vote-yea me-1"></i>
             Langkah 6: Nilai V
         </div>
         <div class="card-body">
@@ -163,16 +163,42 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($nilaiV as $id => $vValue)
+                    @foreach($nilaiV as $value)
                     <tr>
-                        <td>{{ $id }}</td>
-                        <td>{{ number_format($vValue, 3) }}</td>
+                        <td>{{ $value['nama'] }}</td>
+                        <td>{{ number_format($value['v_value'], 3) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
-
+    <!-- Langkah 7: Ranking -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-list-ol me-1"></i>
+            Langkah 7: Ranking
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Ranking</th>
+                        <th>Nasabah</th>
+                        <th>Nilai V</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($ranking as $item)
+                    <tr>
+                        <td>{{ $item['ranking'] }}</td>
+                        <td>{{ $item['nama'] }}</td>
+                        <td>{{ number_format($item['v_value'], 3) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 @endsection

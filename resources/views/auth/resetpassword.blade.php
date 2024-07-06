@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Reset Password</title>
     <!-- Link to Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
@@ -52,33 +52,26 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header text-center">
-                    <h3>Login</h3>
+                    <h3>Reset Password</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('login') }}">
+                    <form method="POST" action="{{ route('password.update') }}">
                         @csrf
+                        <input type="hidden" name="token" value="{{ $token }}">
                         <div class="form-group">
                             <label for="email">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" required autofocus>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ $email ?? old('email') }}" required autofocus>
                         </div>
                         <div class="form-group">
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                            <label class="form-check-label" for="remember">Remember Me</label>
+                        <div class="form-group">
+                            <label for="password-confirm">Confirm Password</label>
+                            <input type="password" class="form-control" id="password-confirm" name="password_confirmation" required>
                         </div>
-                        <div class="mt-2">
-                         <button type="submit" class="btn btn-primary btn-block">Login</button>
-                            <a class="btn btn-link text-link p-0" href="{{ route('password.request') }}">
-                                Forgot Your Password?
-                            </a>
-                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
                     </form>
-                </div>
-                <div class="card-footer text-center">
-                    <span>Don't have an account yet? <a class="text-link" href="{{ route('register') }}">Sign up</a></span>
                 </div>
             </div>
         </div>

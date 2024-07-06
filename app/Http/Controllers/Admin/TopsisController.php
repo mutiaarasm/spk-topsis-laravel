@@ -16,42 +16,31 @@ class TopsisController extends Controller
         'jumlah_pinjaman' => 'Jumlah Pinjaman',
         'lama_angsuran' => 'Lama angsuran'
     ];
+
     public function showTopsisPage()
     {
-        // Mendapatkan pembagi
         $pembagi = $this->hitungPembagi();
-
-        // Menghitung matriks ternormalisasi dengan menggunakan pembagi
         $matriksTernormalisasi = $this->hitungMatriksTernormalisasi($pembagi);
-
-        // Menghitung matriks ternormalisasi terbobot dengan menggunakan matriks ternormalisasi
         $matriksTerbobot = $this->hitungMatriksTerbobot($matriksTernormalisasi);
-
-         // Menghitung A+ dan A-
-       $aPlusMinus = $this->hitungAPlusMinus($matriksTerbobot);
-
-      // Menghitung nilai D
-     $nilaiD = $this->hitungD($matriksTerbobot, $aPlusMinus['A+'], $aPlusMinus['A-']);
-
-     $nilaiV = $this->hitungV($nilaiD);
-
+        $aPlusMinus = $this->hitungAPlusMinus($matriksTerbobot);
+        $nilaiD = $this->hitungD($matriksTerbobot, $aPlusMinus['A+'], $aPlusMinus['A-']);
+        $nilaiV = $this->hitungV($nilaiD);
+        $ranking = $this->hitungRanking($nilaiV);
 
         // Mengirimkan variabel ke view
-        return view('Admin.pages.penilaian.topsis', compact('pembagi', 'matriksTernormalisasi', 'matriksTerbobot','aPlusMinus','nilaiD','nilaiV'));
+        return view('Admin.pages.penilaian.topsis', compact('pembagi', 'matriksTernormalisasi', 'matriksTerbobot', 'aPlusMinus', 'nilaiD', 'nilaiV','ranking'));
     }
 
     public function hitungPembagi()
     {
-        
-        $penilaians = Penilaian::all();
+        $penilaians = Penilaian::with('nasabah')->get();
         $pembagi = [];
 
         foreach (array_keys($this->kriteria) as $kriteria) {
-            
             $jumlahKuadrat = $penilaians->sum(function ($penilaian) use ($kriteria) {
-                return pow($penilaian->$kriteria, 2); //bikin penjumlahan+pangkat2
+                return pow($penilaian->$kriteria, 2);
             });
-            $pembagi[$kriteria] = sqrt($jumlahKuadrat);  //akar dari jumlahkuadrat
+            $pembagi[$kriteria] = sqrt($jumlahKuadrat);
         }
 
         return $pembagi;
@@ -59,113 +48,133 @@ class TopsisController extends Controller
 
     public function hitungMatriksTernormalisasi($pembagi)
     {
-        
-        $penilaians = Penilaian::all();
-
-        $matriksTernormalisasi = []; //nyimpen nilai yg udh di normaliasasi buat ditampilin
+        $penilaians = Penilaian::with('nasabah')->get();
+        $matriksTernormalisasi = [];
 
         foreach ($penilaians as $penilaian) {
             $nilaiTernormalisasi = [];
             foreach (array_keys($this->kriteria) as $kriteria) {
-                $nilaiTernormalisasi[$kriteria] = $penilaian->$kriteria / $pembagi[$kriteria]; //penilaian/pembagi
+                $nilaiTernormalisasi[$kriteria] = $penilaian->$kriteria / $pembagi[$kriteria];
             }
-            $matriksTernormalisasi[$penilaian->id] = $nilaiTernormalisasi;
+            $matriksTernormalisasi[] = [
+                'id' => $penilaian->id,
+                'nama' => $penilaian->nasabah->nama,
+                'values' => $nilaiTernormalisasi
+            ];
         }
+
         return $matriksTernormalisasi;
     }
 
     public function hitungMatriksTerbobot($matriksTernormalisasi)
     {
-        
-        $kriterias = Kriteria::all()->pluck('bobot', 'nama_kriteria')->toArray(); //aray asosiatif
-    
+        $kriterias = Kriteria::all()->pluck('bobot', 'nama_kriteria')->toArray();
         $matriksTerbobot = [];
-    
-        foreach ($matriksTernormalisasi as $id => $nilaiTernormalisasi) {
+
+        foreach ($matriksTernormalisasi as $item) {
             $nilaiTerbobot = [];
-    
             foreach ($this->kriteria as $kriteriaKey => $kriteriaValue) {
-                $bobot = $kriterias[$kriteriaValue] ?? 0; // Jika bobot tidak ditemukan, gunakan nilai default 0
-    
-                $nilaiTerbobot[$kriteriaKey] = $nilaiTernormalisasi[$kriteriaKey] * $bobot;//normalisasi * bobot
+                $bobot = $kriterias[$kriteriaValue] ?? 0;
+                $nilaiTerbobot[$kriteriaKey] = $item['values'][$kriteriaKey] * $bobot;
             }
-    
-            $matriksTerbobot[$id] = $nilaiTerbobot;
+            $matriksTerbobot[] = [
+                'id' => $item['id'],
+                'nama' => $item['nama'],
+                'values' => $nilaiTerbobot
+            ];
         }
-    
+
         return $matriksTerbobot;
     }
+
     public function hitungAPlusMinus($matriksTerbobot)
     {
         $aPlus = [];
         $aMinus = [];
-    
+
         foreach ($this->kriteria as $kriteriaKey => $kriteriaValue) {
-        
-            $values = array_column($matriksTerbobot, $kriteriaKey);
-    
+            $values = array_column(array_column($matriksTerbobot, 'values'), $kriteriaKey);
+
             if (!empty($values)) {
-                
                 if ($this->atributKriteria($kriteriaValue) == 'Benefit') {
-                    $aPlus[$kriteriaKey] = max($values); // kl benefit max
-                    $aMinus[$kriteriaKey] = min($values); // kl benefit min
-                } else { 
-                    $aPlus[$kriteriaKey] = min($values); //kalo cost 
-                    $aMinus[$kriteriaKey] = max($values); // kalo cost
+                    $aPlus[$kriteriaKey] = max($values);
+                    $aMinus[$kriteriaKey] = min($values);
+                } else {
+                    $aPlus[$kriteriaKey] = min($values);
+                    $aMinus[$kriteriaKey] = max($values);
                 }
             } else {
-                
-                $aPlus[$kriteriaKey] = 0; // Atau nilai default lainnya =0
-                $aMinus[$kriteriaKey] = 0; 
+                $aPlus[$kriteriaKey] = 0;
+                $aMinus[$kriteriaKey] = 0;
             }
         }
-    
+
         return ['A+' => $aPlus, 'A-' => $aMinus];
     }
-    
-    // Fungsi tambahan untuk mendapatkan atribut kriteria dari database
+
     private function atributKriteria($namaKriteria)
     {
         $kriteria = Kriteria::where('nama_kriteria', $namaKriteria)->first();
         return $kriteria ? $kriteria->atribut : null;
     }
-    
+
     public function hitungD($matriksTerbobot, $aPlus, $aMinus)
-{
-    $dPlus = [];
-    $dMinus = [];
+    {
+        $dPlus = [];
+        $dMinus = [];
 
-    foreach ($matriksTerbobot as $id => $nilaiTerbobot) {
-        $totalPlus = 0;
-        $totalMinus = 0;
+        foreach ($matriksTerbobot as $item) {
+            $totalPlus = 0;
+            $totalMinus = 0;
 
-        foreach ($nilaiTerbobot as $kriteria => $nilai) {
-        
-            $totalPlus += pow($nilai - $aPlus[$kriteria], 2); //terbobot-nilai a ,pngkat dua
-        
-            $totalMinus += pow($nilai - $aMinus[$kriteria], 2);
+            foreach ($item['values'] as $kriteria => $nilai) {
+                $totalPlus += pow($nilai - $aPlus[$kriteria], 2);
+                $totalMinus += pow($nilai - $aMinus[$kriteria], 2);
+            }
+
+            $dPlus[] = [
+                'id' => $item['id'],
+                'nama' => $item['nama'],
+                'd_plus' => sqrt($totalPlus)
+            ];
+            $dMinus[] = [
+                'id' => $item['id'],
+                'nama' => $item['nama'],
+                'd_minus' => sqrt($totalMinus)
+            ];
         }
 
-        
-        $dPlus[$id] = sqrt($totalPlus); //akar kuadrat
-        $dMinus[$id] = sqrt($totalMinus);
+        return ['D+' => $dPlus, 'D-' => $dMinus];
     }
-
-    return ['D+' => $dPlus, 'D-' => $dMinus];
-}
 
     public function hitungV($nilaiD)
-{
-    $nilaiV = [];
+    {
+        $nilaiV = [];
 
-    foreach ($nilaiD['D+'] as $id => $dPlusValue) {
-        $dMinusValue = $nilaiD['D-'][$id];
-        $nilaiV[$id] = $dMinusValue / ($dPlusValue + $dMinusValue); //d-/(d+ + d-)
+        foreach ($nilaiD['D+'] as $index => $dPlusValue) {
+            $dMinusValue = $nilaiD['D-'][$index]['d_minus'];
+            $nilaiV[] = [
+                'id' => $nilaiD['D+'][$index]['id'],
+                'nama' => $nilaiD['D+'][$index]['nama'],
+                'v_value' => $dMinusValue / ($dPlusValue['d_plus'] + $dMinusValue)
+            ];
+        }
+
+        return $nilaiV;
     }
+    public function hitungRanking($nilaiV)
+    {
+        // Urutkan nilai V dari terbesar ke terkecil
+        usort($nilaiV, function($a, $b) {
+            return $b['v_value'] <=> $a['v_value'];
+        });
 
-    return $nilaiV;
-}
-    
- 
+        // Tambahkan ranking berdasarkan urutan
+        foreach ($nilaiV as $index => $item) {
+            $nilaiV[$index]['ranking'] = $index + 1;
+        }
+
+        return $nilaiV;
+    }
 }
     
