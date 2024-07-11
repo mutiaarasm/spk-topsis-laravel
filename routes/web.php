@@ -38,15 +38,15 @@ Route::get('kriteria/create', [KriteriaController::class, 'create'])->name('krit
 Route::post('kriteria', [KriteriaController::class, 'store'])->name('kriteria.store');
 Route::get('kriteria/{id}/edit', [KriteriaController::class, 'edit'])->name('kriteria.edit');
 Route::put('kriteria/{id}', [KriteriaController::class, 'update'])->name('kriteria.update');
-Route::delete('kriteria/{id}', [KriteriaController::class, 'destroy'])->name('kriteria.destroy');
+Route::delete('kriteria/{kriteria}', [KriteriaController::class, 'destroy'])->name('kriteria.destroy');
 
 Route::resource('kriteria.subKriteria', SubkriteriaController::class)->except(['show']);
 Route::get('kriteria/{kriteria}/subkriteria', [SubkriteriaController::class, 'show'])->name('kriteria.show');
 Route::post('kriteria/{kriteria}/subkriteria', [SubkriteriaController::class, 'store'])->name('subkriteria.store');
 
 Route::prefix('kriteria/{kriteriaId}')->group(function () {
-    Route::get('subkriteria/{subkriteriaId}/edit', [SubkriteriaController::class, 'edit'])->name('subkriteria.edit');
-    Route::put('subkriteria/{subkriteriaId}', [SubkriteriaController::class, 'update'])->name('subkriteria.update');
+Route::get('subkriteria/{subkriteriaId}/edit', [SubkriteriaController::class, 'edit'])->name('subkriteria.edit');
+Route::put('subkriteria/{subkriteriaId}', [SubkriteriaController::class, 'update'])->name('subkriteria.update');
 });
 Route::delete('kriteria/{kriteria}/subkriteria/{subkriteria}', [SubkriteriaController::class, 'destroy'])->name('subkriteria.destroy');
 

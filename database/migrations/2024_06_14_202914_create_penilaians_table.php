@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('penilaians', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('nasabah_id');
-            $table->varchar('pendapatan',50); // Huruf kecil dan menggunakan underscore
+            $table->string('pendapatan',50); // Huruf kecil dan menggunakan underscore
             $table->integer('jumlah_tanggungan'); // Huruf kecil dan menggunakan underscore
             $table->string('jaminan'); // Huruf kecil dan menggunakan underscore
-            $table->varchar('jumlah_pinjaman', 50); // Huruf kecil dan menggunakan underscore
+            $table->string('jumlah_pinjaman', 50); // Huruf kecil dan menggunakan underscore
             $table->integer('lama_angsuran'); // Huruf kecil dan menggunakan underscore
             // Tambahkan kolom-kolom lainnya sesuai kebutuhan
             $table->timestamps();
